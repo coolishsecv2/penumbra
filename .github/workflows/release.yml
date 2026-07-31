@@ -1,0 +1,43 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - name: Build with serial support
+        run: cargo build --release -p antumbra --features penumbra/serial
+      - name: Prepare binary
+        run: copy target\release\antumbra.exe antumbra-x86_64-windows.exe
+        shell: cmd
+      - uses: actions/upload-artifact@v4
+        with:
+          name: antumbra-windows
+          path: antumbra-x86_64-windows.exe
+
+  release:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+      - name: Upload to release
+        uses: ncipollo/release-action@v1
+        with:
+          name: Nightly Build
+          tag: nightly
+          commit: ${{ github.sha }}
+          artifacts: >-
+            antumbra-windows/antumbra-x86_64-windows.exe
+          allowUpdates: true
+          replacesArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
