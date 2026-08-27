@@ -10,13 +10,13 @@ permissions:
   contents: write
 
 jobs:
-  build-windows:
+  build-cli-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
-      - name: Build with serial support
+      - name: Build CLI
         run: cargo build --release -p antumbra --features penumbra/serial
       - name: Prepare binary
         run: copy target\release\antumbra.exe antumbra-x86_64-windows.exe
@@ -26,7 +26,7 @@ jobs:
           name: antumbra-windows
           path: antumbra-x86_64-windows.exe
 
-  build-linux:
+  build-cli-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -34,7 +34,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
-      - name: Build with serial support
+      - name: Build CLI
         run: cargo build --release -p antumbra --features penumbra/serial
       - name: Prepare binary
         run: cp target/release/antumbra antumbra-x86_64-linux
@@ -43,23 +43,50 @@ jobs:
           name: antumbra-linux
           path: antumbra-x86_64-linux
 
-  build-macos:
-    runs-on: macos-latest
+  build-gui-windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
-      - name: Build with serial support
-        run: cargo build --release -p antumbra --features penumbra/serial
-      - name: Prepare binary
-        run: cp target/release/antumbra antumbra-x86_64-macos
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install frontend dependencies
+        working-directory: gui
+        run: npm ci
+      - name: Build Tauri app
+        working-directory: gui
+        run: npm run tauri build
       - uses: actions/upload-artifact@v4
         with:
-          name: antumbra-macos
-          path: antumbra-x86_64-macos
+          name: penumbra-gui-windows
+          path: gui/src-tauri/target/release/bundle/**/*
+
+  build-gui-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev
+      - name: Install frontend dependencies
+        working-directory: gui
+        run: npm ci
+      - name: Build Tauri app
+        working-directory: gui
+        run: npm run tauri build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: penumbra-gui-linux
+          path: gui/src-tauri/target/release/bundle/**/*
 
   release:
-    needs: [build-windows, build-linux, build-macos]
+    needs: [build-cli-windows, build-cli-linux, build-gui-windows, build-gui-linux]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -80,7 +107,8 @@ jobs:
           artifacts: >-
             antumbra-windows/antumbra-x86_64-windows.exe,
             antumbra-linux/antumbra-x86_64-linux,
-            antumbra-macos/antumbra-x86_64-macos
+            penumbra-gui-windows/**/*,
+            penumbra-gui-linux/**/*
           allowUpdates: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}

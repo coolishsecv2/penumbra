@@ -2,7 +2,11 @@
 resolver = "3"
 members = [
     "core",
-    "tui"
+    "tui",
+    "gui/src-tauri",
+]
+exclude = [
+    "gui/node_modules",
 ]
 
 [workspace.package]
