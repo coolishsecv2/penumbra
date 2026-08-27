@@ -5,6 +5,7 @@
 pub mod crash;
 pub mod download;
 pub mod erase;
+pub mod force_fastboot;
 pub mod format;
 pub mod peek;
 pub mod pgpt;
@@ -26,6 +27,7 @@ pub mod xflash;
 pub use crash::CrashArgs;
 pub use download::DownloadArgs;
 pub use erase::EraseArgs;
+pub use force_fastboot::ForceFastbootArgs;
 pub use format::FormatArgs;
 pub use peek::PeekArgs;
 pub use pgpt::PgptArgs;

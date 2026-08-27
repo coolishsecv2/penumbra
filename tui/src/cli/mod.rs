@@ -73,7 +73,8 @@ cli_commands! {
         Reboot(RebootArgs),
         XFlash(XFlashArgs),
         SetActiveSlot(SetActiveSlotArgs),
-        Crash(CrashArgs)
+        Crash(CrashArgs),
+        ForceFastboot(ForceFastbootArgs)
     }
     cli {}
 }
