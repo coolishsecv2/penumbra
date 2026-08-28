@@ -12,7 +12,6 @@ mod device;
 mod error;
 mod helpers;
 
-use error::AppError;
 
 fn main() {
     env_logger::init();

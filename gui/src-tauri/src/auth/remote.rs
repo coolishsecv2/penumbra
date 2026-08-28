@@ -98,11 +98,12 @@ impl RemoteSigner {
 
     fn load_auth_state() -> Option<AuthState> {
         let path = Self::get_config_path()?;
-        if path.exists()
-            && let Ok(data) = fs::read_to_string(path)
-            && let Ok(state) = serde_json::from_str::<AuthState>(&data)
-        {
-            return Some(state);
+        if path.exists() {
+            if let Ok(data) = fs::read_to_string(path) {
+                if let Ok(state) = serde_json::from_str::<AuthState>(&data) {
+                    return Some(state);
+                }
+            }
         }
         None
     }
@@ -191,14 +192,14 @@ impl RemoteSigner {
     fn refresh_auth_token(&self, refresh_token: &str) -> Option<AuthState> {
         let mut res =
             self.post("/api/auth/refresh", Some(refresh_token)).ok()?.send_empty().ok()?;
-        if res.status().is_success()
-            && let Ok(tokens) = res.body_mut().read_json::<TokenResponse>()
-        {
-            return Some(AuthState {
-                access_token: tokens.access_token,
-                refresh_token: tokens.refresh_token,
-                expires_in: tokens.expires_in,
-            });
+        if res.status().is_success() {
+            if let Ok(tokens) = res.body_mut().read_json::<TokenResponse>() {
+                return Some(AuthState {
+                    access_token: tokens.access_token,
+                    refresh_token: tokens.refresh_token,
+                    expires_in: tokens.expires_in,
+                });
+            }
         }
         None
     }
@@ -207,14 +208,14 @@ impl RemoteSigner {
         let req_body = LoginRequest { username, password };
         let mut res = self.post_json("/api/auth/login", None, &req_body).ok()?;
 
-        if res.status().is_success()
-            && let Ok(tokens) = res.body_mut().read_json::<TokenResponse>()
-        {
-            return Some(AuthState {
-                access_token: tokens.access_token,
-                refresh_token: tokens.refresh_token,
-                expires_in: tokens.expires_in,
-            });
+        if res.status().is_success() {
+            if let Ok(tokens) = res.body_mut().read_json::<TokenResponse>() {
+                return Some(AuthState {
+                    access_token: tokens.access_token,
+                    refresh_token: tokens.refresh_token,
+                    expires_in: tokens.expires_in,
+                });
+            }
         }
         None
     }
@@ -233,10 +234,11 @@ impl RemoteSigner {
 
         if let (Some(username), Some(password)) =
             (&self.config.auth.username, &self.config.auth.password)
-            && let Some(new_state) = self.login_with_credentials(username, password)
         {
-            Self::save_auth_state(&new_state).ok()?;
-            return Some(new_state.access_token);
+            if let Some(new_state) = self.login_with_credentials(username, password) {
+                Self::save_auth_state(&new_state).ok()?;
+                return Some(new_state.access_token);
+            }
         }
 
         None
