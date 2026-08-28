@@ -4,6 +4,7 @@
 */
 
 use std::io::{BufReader, BufWriter, Write};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use anyhow::{Context, Result};
 use penumbra::da::DaProtocol;
@@ -16,14 +17,36 @@ use crate::error::AppError;
 
 pub struct DeviceManager {
     device: Option<Device<'static, PortType>>,
+    cancel_token: Arc<AtomicBool>,
 }
 
 impl DeviceManager {
     pub fn new() -> Self {
-        Self { device: None }
+        Self {
+            device: None,
+            cancel_token: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    pub fn cancel_token(&self) -> Arc<AtomicBool> {
+        self.cancel_token.clone()
+    }
+
+    pub fn cancel(&self) {
+        self.cancel_token.store(true, Ordering::Relaxed);
+    }
+
+    pub fn reset_cancel(&self) {
+        self.cancel_token.store(false, Ordering::Relaxed);
+    }
+
+    pub fn is_cancelled(&self) -> bool {
+        self.cancel_token.load(Ordering::Relaxed)
     }
 
     pub fn connect(&mut self, da_path: &str, preloader_path: Option<&str>) -> Result<()> {
+        self.reset_cancel();
+
         let da_bytes = std::fs::read(da_path)
             .context(format!("Failed to read DA file: {}", da_path))?;
         let da_data: &'static [u8] = Box::leak(da_bytes.into_boxed_slice());
@@ -34,10 +57,23 @@ impl DeviceManager {
         let vid = Some(0x0E8D);
         let pid = Some(0x2000);
 
-        let mtk_port = PortType::find_device(vid, pid, PortBackend::Auto)
-            .map_err(|e| AppError::Connection(format!("Failed to find device: {}", e)))?
-            .ok_or_else(|| AppError::Connection("No MTK device found".to_string()))?;
+        log::info!("Searching for MTK device (VID: {:04X}, PID: {:04X})...", vid.unwrap_or(0), pid.unwrap_or(0));
 
+        let mtk_port = PortType::find_device(vid, pid, PortBackend::Auto)
+            .map_err(|e| AppError::connection(format!("Failed to find device: {}", e)))?
+            .ok_or_else(|| {
+                AppError::Connection {
+                    message: "No MTK device found".to_string(),
+                    category: crate::error::ErrorCategory::Command,
+                    suggestion: Some("Ensure the device is connected in Preloader or BROM mode. Try unplugging and re-plugging the USB cable.".to_string()),
+                }
+            })?;
+
+        if self.is_cancelled() {
+            return Err(AppError::Cancelled.into());
+        }
+
+        log::info!("Building device with DA...");
         let mut builder = DeviceBuilder::new(mtk_port).with_da_data(da_data);
 
         if let Some(pl) = pl_data {
@@ -46,13 +82,19 @@ impl DeviceManager {
 
         let mut device = builder
             .build()
-            .map_err(|e| AppError::Device(format!("Failed to build device: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to build device: {}", e)))?;
 
+        if self.is_cancelled() {
+            return Err(AppError::Cancelled.into());
+        }
+
+        log::info!("Initializing device...");
         device
             .init()
-            .map_err(|e| AppError::Device(format!("Failed to initialize: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to initialize: {}", e)))?;
 
         self.device = Some(device);
+        log::info!("Device connected successfully!");
         Ok(())
     }
 
