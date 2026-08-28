@@ -18,13 +18,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Build CLI
         run: cargo build --release -p antumbra --features penumbra/serial
-      - name: Prepare binary
-        run: copy target\release\antumbra.exe antumbra-x86_64-windows.exe
-        shell: cmd
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p staging
+          cp target/release/antumbra.exe staging/antumbra.exe
+          7z a antumbra-windows-x86_64.zip staging/*
       - uses: actions/upload-artifact@v4
         with:
           name: antumbra-windows
-          path: antumbra-x86_64-windows.exe
+          path: antumbra-windows-x86_64.zip
 
   build-cli-linux:
     runs-on: ubuntu-latest
@@ -36,12 +39,15 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
       - name: Build CLI
         run: cargo build --release -p antumbra --features penumbra/serial
-      - name: Prepare binary
-        run: cp target/release/antumbra antumbra-x86_64-linux
+      - name: Package
+        run: |
+          mkdir -p staging
+          cp target/release/antumbra staging/antumbra
+          tar -czvf antumbra-linux-x86_64.tar.gz -C staging .
       - uses: actions/upload-artifact@v4
         with:
           name: antumbra-linux
-          path: antumbra-x86_64-linux
+          path: antumbra-linux-x86_64.tar.gz
 
   build-gui-windows:
     runs-on: windows-latest
@@ -58,10 +64,23 @@ jobs:
       - name: Build Tauri app
         working-directory: gui
         run: npm run tauri build
+      - name: List build output
+        shell: bash
+        run: find gui/src-tauri/target/release -maxdepth 3 -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.nsis" -o -name "*.zip" \) 2>/dev/null || echo "No installer files found"
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p staging
+          find gui/src-tauri/target/release/bundle -type f \( -name "*.exe" -o -name "*.msi" -o -name "*.nsis" -o -name "*.zip" \) -exec cp {} staging/ \; 2>/dev/null || true
+          if [ -z "$(ls staging/ 2>/dev/null)" ]; then
+            echo "No bundle installers found, packaging raw binary"
+            cp gui/src-tauri/target/release/penumbra-gui.exe staging/ 2>/dev/null || true
+          fi
+          cd staging && 7z a ../penumbra-gui-windows-x86_64.zip * && cd ..
       - uses: actions/upload-artifact@v4
         with:
           name: penumbra-gui-windows
-          path: gui/src-tauri/target/release/bundle/**/*
+          path: penumbra-gui-windows-x86_64.zip
 
   build-gui-linux:
     runs-on: ubuntu-latest
@@ -80,16 +99,29 @@ jobs:
       - name: Build Tauri app
         working-directory: gui
         run: npm run tauri build
+      - name: List build output
+        run: find gui/src-tauri/target/release -maxdepth 3 -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" \) 2>/dev/null || echo "No installer files found"
+      - name: Package
+        run: |
+          mkdir -p staging
+          find gui/src-tauri/target/release/bundle -type f \( -name "*.deb" -o -name "*.AppImage" -o -name "*.tar.gz" \) -exec cp {} staging/ \; 2>/dev/null || true
+          if [ -z "$(ls staging/ 2>/dev/null)" ]; then
+            echo "No bundle installers found, packaging raw binary"
+            cp gui/src-tauri/target/release/penumbra-gui staging/ 2>/dev/null || true
+          fi
+          tar -czvf penumbra-gui-linux-x86_64.tar.gz -C staging .
       - uses: actions/upload-artifact@v4
         with:
           name: penumbra-gui-linux
-          path: gui/src-tauri/target/release/bundle/**/*
+          path: penumbra-gui-linux-x86_64.tar.gz
 
   release:
     needs: [build-cli-windows, build-cli-linux, build-gui-windows, build-gui-linux]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
+        path: artifacts
       - name: Determine tag
         id: tag
         run: |
@@ -98,21 +130,15 @@ jobs:
           else
             echo "tag=nightly" >> $GITHUB_OUTPUT
           fi
-      - name: Collect release files
-        run: |
-          mkdir -p release
-          cp antumbra-windows/antumbra-x86_64-windows.exe release/ 2>/dev/null || true
-          cp antumbra-linux/antumbra-x86_64-linux release/ 2>/dev/null || true
-          find penumbra-gui-windows -type f \( -name '*.msi' -o -name '*.exe' -o -name '*.zip' -o -name '*.nsis*' \) -exec cp {} release/ \; 2>/dev/null || true
-          find penumbra-gui-linux -type f \( -name '*.deb' -o -name '*.AppImage' -o -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \; 2>/dev/null || true
-          ls -la release/
-      - name: Upload to release
+      - name: List downloaded artifacts
+        run: find artifacts -type f
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           name: ${{ steps.tag.outputs.tag == 'nightly' && 'Nightly Build' || steps.tag.outputs.tag }}
           tag: ${{ steps.tag.outputs.tag }}
           commit: ${{ github.sha }}
-          artifacts: "release/*"
+          artifacts: "artifacts/**/*.zip,artifacts/**/*.tar.gz"
           allowUpdates: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
