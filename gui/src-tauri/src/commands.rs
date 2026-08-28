@@ -322,6 +322,21 @@ pub async fn patch_da(input_path: String, output_path: String) -> Result<(), App
         .map_err(|e| AppError::device(e.to_string()))
 }
 
+// === Scatter ===
+
+#[tauri::command]
+pub async fn parse_scatter_file(file_path: String) -> Result<crate::scatter::ScatterFileInfo, AppError> {
+    crate::scatter::parse_scatter(&file_path)
+}
+
+#[tauri::command]
+pub async fn detect_image_files(
+    scatter_path: String,
+    partitions: Vec<crate::scatter::ScatterPartitionInfo>,
+) -> Result<std::collections::HashMap<String, String>, AppError> {
+    crate::scatter::detect_image_files(&scatter_path, &partitions)
+}
+
 // === Config ===
 
 #[tauri::command]

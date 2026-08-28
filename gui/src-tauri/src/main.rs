@@ -12,6 +12,7 @@ mod device;
 mod device_discovery;
 mod error;
 mod helpers;
+mod scatter;
 
 
 fn main() {
@@ -85,6 +86,9 @@ fn main() {
             // Logo
             commands::get_logo,
             commands::get_logo_ascii,
+            // Scatter
+            commands::parse_scatter_file,
+            commands::detect_image_files,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Penumbra GUI");
