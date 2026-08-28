@@ -155,6 +155,7 @@ cli_commands! {
         Efuse(EfuseArgs),
         Crash(CrashArgs),
         BootPl(BootPlArgs),
+        ForceFastboot(ForceFastbootArgs),
     }
     cli {
         PatchDa(PatchDaArgs),
