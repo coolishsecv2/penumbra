@@ -49,15 +49,46 @@ export interface KeysInfo {
   rot_key: string;
 }
 
+export type ErrorCategory =
+  | "network"
+  | "permission"
+  | "filesystem"
+  | "validation"
+  | "command"
+  | "unknown";
+
+export interface AppError {
+  type: string;
+  message: string;
+  category: ErrorCategory;
+  suggestion?: string;
+  code?: number;
+  output?: string;
+}
+
+export interface SerializedError {
+  type?: string;
+  message?: string;
+  category?: string;
+  suggestion?: string;
+  code?: number;
+  output?: string;
+}
+
 export interface DeviceState {
   connected: boolean;
+  isConnecting: boolean;
+  connectionError: string | null;
   daPath: string | null;
   preloaderPath: string | null;
   partitions: Partition[];
   deviceInfo: DeviceInfo | null;
   setConnected: (connected: boolean) => void;
+  setConnecting: (connecting: boolean) => void;
+  setConnectionError: (error: string | null) => void;
   setDaPath: (path: string | null) => void;
   setPreloaderPath: (path: string | null) => void;
   setPartitions: (partitions: Partition[]) => void;
   setDeviceInfo: (info: DeviceInfo | null) => void;
+  disconnect: () => void;
 }
