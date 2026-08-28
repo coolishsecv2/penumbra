@@ -132,7 +132,7 @@ impl DeviceManager {
         Ok(partitions)
     }
 
-    pub fn flash_partition(&mut self, partition: &str, image_path: &str) -> Result<()> {
+    pub fn flash_partition(&mut self, partition: &str, image_path: &str, app: &tauri::AppHandle) -> Result<()> {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         let image_data = std::fs::read(image_path)
@@ -143,8 +143,10 @@ impl DeviceManager {
 
         let size = image_data.len();
         let data = image_data.as_slice();
-        let mut progress = |written: usize, total: usize| {
-            log::info!("Flash progress: {}/{}", written, total);
+        let partition_clone = partition.to_string();
+        let app_clone = app.clone();
+        let mut progress = move |written: usize, total: usize| {
+            crate::events::emit_progress(&app_clone, written, total, "flash", &partition_clone);
         };
 
         device.write_partition(partition, size, data, &mut progress)
@@ -153,7 +155,7 @@ impl DeviceManager {
         Ok(())
     }
 
-    pub fn read_partition(&mut self, partition: &str, output_path: &str) -> Result<()> {
+    pub fn read_partition(&mut self, partition: &str, output_path: &str, app: &tauri::AppHandle) -> Result<()> {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         let file = std::fs::File::create(output_path)?;
@@ -162,8 +164,10 @@ impl DeviceManager {
         device.ensure_da_mode()
             .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
 
-        let mut progress = |read: usize, total: usize| {
-            log::info!("Read progress: {}/{}", read, total);
+        let partition_clone = partition.to_string();
+        let app_clone = app.clone();
+        let mut progress = move |read: usize, total: usize| {
+            crate::events::emit_progress(&app_clone, read, total, "read", &partition_clone);
         };
 
         device.read_partition(partition, &mut writer, &mut progress)
@@ -172,14 +176,16 @@ impl DeviceManager {
         Ok(())
     }
 
-    pub fn erase_partition(&mut self, partition: &str) -> Result<()> {
+    pub fn erase_partition(&mut self, partition: &str, app: &tauri::AppHandle) -> Result<()> {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
             .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
 
-        let mut progress = |erased: usize, total: usize| {
-            log::info!("Erase progress: {}/{}", erased, total);
+        let partition_clone = partition.to_string();
+        let app_clone = app.clone();
+        let mut progress = move |erased: usize, total: usize| {
+            crate::events::emit_progress(&app_clone, erased, total, "erase", &partition_clone);
         };
 
         device.erase_partition(partition, &mut progress)
@@ -188,8 +194,8 @@ impl DeviceManager {
         Ok(())
     }
 
-    pub fn format_partition(&mut self, partition: &str) -> Result<()> {
-        self.erase_partition(partition)
+    pub fn format_partition(&mut self, partition: &str, app: &tauri::AppHandle) -> Result<()> {
+        self.erase_partition(partition, app)
     }
 
     pub fn reboot(&mut self, mode: &str) -> Result<()> {
@@ -230,7 +236,7 @@ impl DeviceManager {
         self.reboot("fastboot")
     }
 
-    pub fn flash_scatter(&mut self, scatter_path: &str) -> Result<()> {
+    pub fn flash_scatter(&mut self, scatter_path: &str, app: &tauri::AppHandle) -> Result<()> {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         let scatter_content = std::fs::read_to_string(scatter_path)
@@ -255,8 +261,9 @@ impl DeviceManager {
             Ok(std::io::BufWriter::new(file))
         };
 
-        let mut progress = |written: usize, total: usize| {
-            log::info!("Scatter flash: {}/{}", written, total);
+        let app_clone = app.clone();
+        let mut progress = move |written: usize, total: usize| {
+            crate::events::emit_progress(&app_clone, written, total, "scatter", "all");
         };
 
         device.ensure_da_mode()

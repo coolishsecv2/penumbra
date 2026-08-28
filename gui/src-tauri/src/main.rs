@@ -11,6 +11,7 @@ mod config;
 mod device;
 mod device_discovery;
 mod error;
+mod events;
 mod helpers;
 mod scatter;
 

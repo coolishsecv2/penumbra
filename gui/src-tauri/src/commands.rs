@@ -52,9 +52,10 @@ pub async fn list_partitions() -> Result<Vec<PartitionInfo>, AppError> {
 pub async fn flash_partition(
     partition: String,
     image_path: String,
+    app: tauri::AppHandle,
 ) -> Result<(), AppError> {
     let mut manager = DEVICE_MANAGER.lock().map_err(|e| AppError::device(e.to_string()))?;
-    manager.flash_partition(&partition, &image_path)
+    manager.flash_partition(&partition, &image_path, &app)
         .map_err(|e| AppError::device(e.to_string()))
 }
 
@@ -62,23 +63,24 @@ pub async fn flash_partition(
 pub async fn read_partition(
     partition: String,
     output_path: String,
+    app: tauri::AppHandle,
 ) -> Result<(), AppError> {
     let mut manager = DEVICE_MANAGER.lock().map_err(|e| AppError::device(e.to_string()))?;
-    manager.read_partition(&partition, &output_path)
+    manager.read_partition(&partition, &output_path, &app)
         .map_err(|e| AppError::device(e.to_string()))
 }
 
 #[tauri::command]
-pub async fn erase_partition(partition: String) -> Result<(), AppError> {
+pub async fn erase_partition(partition: String, app: tauri::AppHandle) -> Result<(), AppError> {
     let mut manager = DEVICE_MANAGER.lock().map_err(|e| AppError::device(e.to_string()))?;
-    manager.erase_partition(&partition)
+    manager.erase_partition(&partition, &app)
         .map_err(|e| AppError::device(e.to_string()))
 }
 
 #[tauri::command]
-pub async fn format_partition(partition: String) -> Result<(), AppError> {
+pub async fn format_partition(partition: String, app: tauri::AppHandle) -> Result<(), AppError> {
     let mut manager = DEVICE_MANAGER.lock().map_err(|e| AppError::device(e.to_string()))?;
-    manager.format_partition(&partition)
+    manager.format_partition(&partition, &app)
         .map_err(|e| AppError::device(e.to_string()))
 }
 
@@ -101,9 +103,9 @@ pub async fn force_fastboot() -> Result<(), AppError> {
 }
 
 #[tauri::command]
-pub async fn flash_scatter(scatter_path: String) -> Result<(), AppError> {
+pub async fn flash_scatter(scatter_path: String, app: tauri::AppHandle) -> Result<(), AppError> {
     let mut manager = DEVICE_MANAGER.lock().map_err(|e| AppError::device(e.to_string()))?;
-    manager.flash_scatter(&scatter_path)
+    manager.flash_scatter(&scatter_path, &app)
         .map_err(|e| AppError::device(e.to_string()))
 }
 
