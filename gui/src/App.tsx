@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/Dashboard";
@@ -7,8 +8,22 @@ import { DeviceInfoPage } from "./pages/DeviceInfoPage";
 import { Advanced } from "./pages/Advanced";
 import { Security } from "./pages/Security";
 import { Settings } from "./pages/Settings";
+import { cancelOperation } from "./services/api";
 
-function App() {
+function AppContent() {
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      cancelOperation().catch(() => undefined);
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      handleBeforeUnload();
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -24,6 +39,10 @@ function App() {
       </Routes>
     </BrowserRouter>
   );
+}
+
+function App() {
+  return <AppContent />;
 }
 
 export default App;
