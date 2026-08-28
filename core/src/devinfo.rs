@@ -3,8 +3,7 @@
     SPDX-FileCopyrightText: 2026 Shomy
 */
 
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use acon::{MMIO, SoC};
 use hacc::BootControl;
@@ -13,7 +12,7 @@ use crate::Partition;
 
 #[derive(Clone, Default)]
 pub struct DevInfo {
-    inner: Rc<RefCell<DevInfoData>>,
+    inner: Arc<Mutex<DevInfoData>>,
 }
 
 #[derive(Default, Clone)]
@@ -30,68 +29,68 @@ pub struct DevInfoData {
 
 impl DevInfo {
     pub fn new(data: DevInfoData) -> Self {
-        Self { inner: Rc::new(RefCell::new(data)) }
+        Self { inner: Arc::new(Mutex::new(data)) }
     }
 
     pub fn data(&self) -> DevInfoData {
-        self.inner.borrow().clone()
+        self.inner.lock().unwrap().clone()
     }
 
     pub fn set_data(&self, data: DevInfoData) {
-        *self.inner.borrow_mut() = data;
+        *self.inner.lock().unwrap() = data;
     }
 
     pub fn soc_id(&self) -> [u8; 32] {
-        self.inner.borrow().soc_id
+        self.inner.lock().unwrap().soc_id
     }
 
     pub fn set_soc_id(&self, soc_id: [u8; 32]) {
-        self.inner.borrow_mut().soc_id = soc_id;
+        self.inner.lock().unwrap().soc_id = soc_id;
     }
 
     pub fn meid(&self) -> [u8; 16] {
-        self.inner.borrow().meid
+        self.inner.lock().unwrap().meid
     }
 
     pub fn set_meid(&self, meid: [u8; 16]) {
-        self.inner.borrow_mut().meid = meid;
+        self.inner.lock().unwrap().meid = meid;
     }
 
     pub fn hw_subcode(&self) -> u16 {
-        self.inner.borrow().hw_subcode
+        self.inner.lock().unwrap().hw_subcode
     }
 
     pub fn set_hw_subcode(&self, hw_subcode: u16) {
-        self.inner.borrow_mut().hw_subcode = hw_subcode;
+        self.inner.lock().unwrap().hw_subcode = hw_subcode;
     }
 
     pub fn chip(&self) -> Option<SoC> {
-        self.inner.borrow().chip
+        self.inner.lock().unwrap().chip
     }
 
     pub fn set_chip(&self, chip: SoC) {
-        self.inner.borrow_mut().chip = Some(chip);
+        self.inner.lock().unwrap().chip = Some(chip);
     }
 
     pub fn clear_chip(&self) {
-        self.inner.borrow_mut().chip = None;
+        self.inner.lock().unwrap().chip = None;
     }
 
     pub fn hw_code(&self) -> u16 {
         // Prefer the chip's hwcode if available, otherwise fall back to the stored hw_code.
-        self.chip().map(|c| c.to_hwcode()).unwrap_or(self.inner.borrow().hw_code)
+        self.chip().map(|c| c.to_hwcode()).unwrap_or(self.inner.lock().unwrap().hw_code)
     }
 
     pub fn partitions(&self) -> Vec<Partition> {
-        self.inner.borrow().partitions.clone()
+        self.inner.lock().unwrap().partitions.clone()
     }
 
     pub fn set_partitions(&self, partitions: Vec<Partition>) {
-        self.inner.borrow_mut().partitions = partitions;
+        self.inner.lock().unwrap().partitions = partitions;
     }
 
     pub fn get_partition(&self, name: &str) -> Option<Partition> {
-        let data = self.inner.borrow();
+        let data = self.inner.lock().unwrap();
 
         if let Some(p) = data.partitions.iter().find(|p| p.name.eq_ignore_ascii_case(name)) {
             return Some(p.clone());
@@ -105,19 +104,19 @@ impl DevInfo {
     }
 
     pub fn bootctrl(&self) -> Option<BootControl> {
-        self.inner.borrow().bootctrl.clone()
+        self.inner.lock().unwrap().bootctrl.clone()
     }
 
     pub fn set_bootctrl(&self, bootctrl: BootControl) {
-        self.inner.borrow_mut().bootctrl = Some(bootctrl);
+        self.inner.lock().unwrap().bootctrl = Some(bootctrl);
     }
 
     pub fn target_config(&self) -> u32 {
-        self.inner.borrow().target_config
+        self.inner.lock().unwrap().target_config
     }
 
     pub fn set_target_config(&self, cfg: u32) {
-        self.inner.borrow_mut().target_config = cfg;
+        self.inner.lock().unwrap().target_config = cfg;
     }
 
     pub fn sbc_enabled(&self) -> bool {
