@@ -32,6 +32,8 @@ dirs = "6"
 config = "0.15"
 ureq = { version = "3", features = ["json"] }
 url = "2"
+serialport = "4.3"
+libc = "0.2"
 penumbra = { path = "../../core", package = "penumbra-mtk" }
 
 [target.'cfg(windows)'.dependencies]
