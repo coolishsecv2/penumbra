@@ -13,9 +13,14 @@ import * as api from "../services/api";
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { connected, daPath, partitions, deviceInfo, setConnected, setPartitions, setDeviceInfo } =
+  const { connected, daPath, preloaderPath, partitions, deviceInfo, setConnected, setPartitions, setDeviceInfo } =
     useDeviceStore();
   const [connecting, setConnecting] = useState(false);
+  const [logo, setLogo] = useState("");
+
+  useEffect(() => {
+    api.getLogoAscii().then(setLogo).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (connected && daPath) {
@@ -41,7 +46,7 @@ export function Dashboard() {
     }
     setConnecting(true);
     try {
-      await api.connectDevice(daPath);
+      await api.connectDevice(daPath, preloaderPath || undefined);
       setConnected(true);
     } catch (e) {
       console.error("Connection failed:", e);
@@ -55,9 +60,11 @@ export function Dashboard() {
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-foreground font-mono">
-          Penumbra GUI
-        </h1>
+        {logo && (
+          <pre className="text-[8px] leading-tight text-accent font-mono mb-2">
+            {logo}
+          </pre>
+        )}
         <p className="text-sm text-muted mt-1">
           {connected
             ? `Device connected — ${partitions.length} partitions detected`

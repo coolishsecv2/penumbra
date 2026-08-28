@@ -7,6 +7,8 @@ import {
   RotateCcw,
   Power,
   Zap,
+  FolderOpen,
+  RefreshCw,
 } from "lucide-react";
 import { useDeviceStore } from "../services/store";
 import * as api from "../services/api";
@@ -15,6 +17,7 @@ export function Tools() {
   const { connected, partitions } = useDeviceStore();
   const [selectedPartition, setSelectedPartition] = useState("");
   const [outputPath, setOutputPath] = useState("");
+  const [inputPath, setInputPath] = useState("");
   const [operation, setOperation] = useState<string | null>(null);
 
   async function handleRead() {
@@ -29,6 +32,18 @@ export function Tools() {
     }
   }
 
+  async function handleUpload() {
+    if (!selectedPartition || !inputPath) return;
+    setOperation("uploading");
+    try {
+      await api.flashPartition(selectedPartition, inputPath);
+      setOperation(null);
+    } catch (e) {
+      alert(`Upload failed: ${e}`);
+      setOperation(null);
+    }
+  }
+
   async function handleErase() {
     if (!selectedPartition) return;
     if (!confirm(`Erase partition "${selectedPartition}"? This cannot be undone.`)) return;
@@ -38,6 +53,19 @@ export function Tools() {
       setOperation(null);
     } catch (e) {
       alert(`Erase failed: ${e}`);
+      setOperation(null);
+    }
+  }
+
+  async function handleFormat() {
+    if (!selectedPartition) return;
+    if (!confirm(`Format partition "${selectedPartition}"? This is equivalent to erase.`)) return;
+    setOperation("formatting");
+    try {
+      await api.formatPartition(selectedPartition);
+      setOperation(null);
+    } catch (e) {
+      alert(`Format failed: ${e}`);
       setOperation(null);
     }
   }
@@ -79,7 +107,9 @@ export function Tools() {
               ))}
             </select>
 
-            <div className="grid grid-cols-2 gap-2 mt-3">
+            {/* Read Partition */}
+            <div className="mt-3">
+              <label className="text-[10px] font-bold uppercase text-muted mb-1 block">Read (Dump) Partition</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -89,22 +119,75 @@ export function Tools() {
                   className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
                 />
                 <button
+                  onClick={async () => {
+                    const { open } = await import("@tauri-apps/plugin-dialog");
+                    const file = await open({ multiple: false, save: true });
+                    if (file) setOutputPath(file as string);
+                  }}
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted hover:text-foreground"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                </button>
+                <button
                   onClick={handleRead}
                   disabled={!selectedPartition || !outputPath || operation !== null}
                   className="flex items-center gap-2 rounded-lg bg-success/20 px-3 py-2 text-sm text-success hover:bg-success/30 disabled:opacity-50"
                 >
-                  <Download className="h-4 w-4" />
+                  {operation === "reading" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   Read
                 </button>
               </div>
+            </div>
 
+            {/* Upload/Write Partition */}
+            <div className="mt-3">
+              <label className="text-[10px] font-bold uppercase text-muted mb-1 block">Upload (Write) Partition</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputPath}
+                  onChange={(e) => setInputPath(e.target.value)}
+                  placeholder="Input file path..."
+                  className="flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
+                />
+                <button
+                  onClick={async () => {
+                    const { open } = await import("@tauri-apps/plugin-dialog");
+                    const file = await open({ multiple: false });
+                    if (file) setInputPath(file as string);
+                  }}
+                  className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-muted hover:text-foreground"
+                >
+                  <FolderOpen className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={handleUpload}
+                  disabled={!selectedPartition || !inputPath || operation !== null}
+                  className="flex items-center gap-2 rounded-lg bg-accent/20 px-3 py-2 text-sm text-accent hover:bg-accent/30 disabled:opacity-50"
+                >
+                  {operation === "uploading" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  Write
+                </button>
+              </div>
+            </div>
+
+            {/* Erase & Format */}
+            <div className="grid grid-cols-2 gap-2 mt-3">
               <button
                 onClick={handleErase}
                 disabled={!selectedPartition || operation !== null}
-                className="flex items-center justify-center gap-2 rounded-lg bg-danger/20 px-3 py-2 text-sm text-danger hover:bg-danger/30 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 rounded-lg bg-danger/20 px-3 py-2.5 text-sm text-danger hover:bg-danger/30 disabled:opacity-50"
               >
-                <Trash2 className="h-4 w-4" />
+                {operation === "erasing" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 Erase
+              </button>
+              <button
+                onClick={handleFormat}
+                disabled={!selectedPartition || operation !== null}
+                className="flex items-center justify-center gap-2 rounded-lg bg-warning/20 px-3 py-2.5 text-sm text-warning hover:bg-warning/30 disabled:opacity-50"
+              >
+                {operation === "formatting" ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                Format
               </button>
             </div>
           </Section>
