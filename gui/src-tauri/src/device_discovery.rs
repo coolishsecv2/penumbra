@@ -169,7 +169,7 @@ fn wait_for_port(
     loop {
         if let Some(c) = cancel {
             if c.load(Ordering::Relaxed) {
-                return Err(AppError::Connection("Connection cancelled".to_string()));
+                return Err(AppError::connection("Connection cancelled".to_string()));
             }
         }
 
@@ -216,7 +216,7 @@ fn wait_for_port(
                 timeout.as_secs_f64()
             );
             emit_udev_progress(app, "timeout", &msg);
-            return Err(AppError::Connection(msg));
+            return Err(AppError::connection(msg));
         }
 
         std::thread::sleep(poll_interval);
@@ -243,10 +243,10 @@ fn open_with_udev_recovery(device: &str, app: Option<&AppHandle>) -> Result<(), 
                 serialport::new(device, 115_200)
                     .timeout(Duration::from_millis(250))
                     .open()
-                    .map_err(|e| AppError::Connection(format!("Still cannot open {device}: {e}")))?;
+                    .map_err(|e| AppError::connection(format!("Still cannot open {device}: {e}")))?;
                 Ok(())
             } else {
-                Err(AppError::Connection(format!("Failed to open {device}: {err}")))
+                Err(AppError::connection(format!("Failed to open {device}: {err}")))
             }
         }
     }

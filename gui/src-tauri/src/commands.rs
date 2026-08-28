@@ -15,7 +15,7 @@ pub async fn connect_device(
     preloader_path: Option<String>,
 ) -> Result<(), AppError> {
     let manager = DEVICE_MANAGER.lock().map_err(|e| AppError::device(e.to_string()))?;
-    let cancel_token = manager.cancel_token();
+    let _cancel_token = manager.cancel_token();
     drop(manager);
 
     let _ = crate::device_discovery::ensure_udev_rules(None);

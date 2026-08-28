@@ -4,7 +4,7 @@
 */
 
 use crate::error::AppError;
-use penumbra::da::scatter::ScatterFile;
+use penumbra::da::ScatterFile;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -33,7 +33,7 @@ pub struct ScatterFileInfo {
     pub file_path: String,
 }
 
-fn region_to_string(part: &penumbra::da::scatter::ScatterPartition) -> String {
+fn region_to_string(part: &penumbra::da::ScatterPartition) -> String {
     match part.kind() {
         penumbra::PartitionKind::Ufs(ufs) => format!("UFS_LU{}", ufs as u8),
         penumbra::PartitionKind::Emmc(emmc) => format!("EMMC_{}", format!("{:?}", emmc).to_uppercase()),
@@ -79,14 +79,14 @@ pub fn parse_scatter(file_path: &str) -> Result<ScatterFileInfo, AppError> {
                 file_name: p.path.as_ref().map(|pb| pb.to_string_lossy().to_string()),
                 is_download: p.download,
                 partition_type: match p.op {
-                    penumbra::da::scatter::ScatterOp::Bootloader => "SV5_BL_BIN",
-                    penumbra::da::scatter::ScatterOp::Update => "NORMAL_ROM",
-                    penumbra::da::scatter::ScatterOp::Invisible => "INVISIBLE",
-                    penumbra::da::scatter::ScatterOp::Reserved => "RESERVED",
-                    penumbra::da::scatter::ScatterOp::Logic => "LOGIC",
-                    penumbra::da::scatter::ScatterOp::Protected => "PROTECTED",
-                    penumbra::da::scatter::ScatterOp::BinRegion => "BINREGION",
-                    penumbra::da::scatter::ScatterOp::NeedResize => "NEEDRESIZE",
+                    penumbra::da::ScatterOp::Bootloader => "SV5_BL_BIN",
+                    penumbra::da::ScatterOp::Update => "NORMAL_ROM",
+                    penumbra::da::ScatterOp::Invisible => "INVISIBLE",
+                    penumbra::da::ScatterOp::Reserved => "RESERVED",
+                    penumbra::da::ScatterOp::Logic => "LOGIC",
+                    penumbra::da::ScatterOp::Protected => "PROTECTED",
+                    penumbra::da::ScatterOp::BinRegion => "BINREGION",
+                    penumbra::da::ScatterOp::NeedResize => "NEEDRESIZE",
                 }
                 .to_string(),
                 linear_start_addr: format!("0x{:x}", p.part.address),
@@ -95,14 +95,14 @@ pub fn parse_scatter(file_path: &str) -> Result<ScatterFileInfo, AppError> {
                 region,
                 storage: storage_str.to_string(),
                 operation_type: match p.op {
-                    penumbra::da::scatter::ScatterOp::Bootloader => "BOOTLOADERS",
-                    penumbra::da::scatter::ScatterOp::Invisible => "INVISIBLE",
-                    penumbra::da::scatter::ScatterOp::Update => "UPDATE",
-                    penumbra::da::scatter::ScatterOp::Protected => "PROTECTED",
-                    penumbra::da::scatter::ScatterOp::BinRegion => "BINREGION",
-                    penumbra::da::scatter::ScatterOp::Reserved => "RESERVED",
-                    penumbra::da::scatter::ScatterOp::Logic => "LOGIC",
-                    penumbra::da::scatter::ScatterOp::NeedResize => "NEEDRESIZE",
+                    penumbra::da::ScatterOp::Bootloader => "BOOTLOADERS",
+                    penumbra::da::ScatterOp::Invisible => "INVISIBLE",
+                    penumbra::da::ScatterOp::Update => "UPDATE",
+                    penumbra::da::ScatterOp::Protected => "PROTECTED",
+                    penumbra::da::ScatterOp::BinRegion => "BINREGION",
+                    penumbra::da::ScatterOp::Reserved => "RESERVED",
+                    penumbra::da::ScatterOp::Logic => "LOGIC",
+                    penumbra::da::ScatterOp::NeedResize => "NEEDRESIZE",
                 }
                 .to_string(),
             }
