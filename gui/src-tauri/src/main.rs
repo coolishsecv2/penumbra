@@ -9,6 +9,7 @@ mod auth;
 mod commands;
 mod config;
 mod device;
+mod device_discovery;
 mod error;
 mod helpers;
 
@@ -35,6 +36,7 @@ fn main() {
             // Connection
             commands::connect_device,
             commands::disconnect_device,
+            commands::cancel_operation,
             commands::list_partitions,
             commands::get_device_info,
             // Flash operations
