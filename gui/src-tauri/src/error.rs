@@ -59,9 +59,6 @@ pub enum AppError {
         code: Option<i32>,
     },
 
-    #[error("Anyhow error: {0}")]
-    Anyhow(#[from] anyhow::Error),
-
     #[error("Operation cancelled")]
     #[serde(rename = "cancelled")]
     Cancelled,
@@ -98,7 +95,6 @@ impl AppError {
             AppError::Connection { category, .. } => category.clone(),
             AppError::Device { category, .. } => category.clone(),
             AppError::Io { .. } => ErrorCategory::FileSystem,
-            AppError::Anyhow(_) => ErrorCategory::Unknown,
             AppError::Cancelled => ErrorCategory::Command,
         }
     }

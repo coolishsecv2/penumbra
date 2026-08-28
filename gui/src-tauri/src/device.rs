@@ -116,7 +116,7 @@ impl DeviceManager {
             .ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let partitions: Vec<PartitionInfo> = device
             .partitions_iter()
@@ -139,7 +139,7 @@ impl DeviceManager {
             .context(format!("Failed to read image: {}", image_path))?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let size = image_data.len();
         let data = image_data.as_slice();
@@ -150,7 +150,7 @@ impl DeviceManager {
         };
 
         device.write_partition(partition, size, data, &mut progress)
-            .map_err(|e| AppError::Device(format!("Flash failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Flash failed: {}", e)))?;
 
         Ok(())
     }
@@ -162,7 +162,7 @@ impl DeviceManager {
         let mut writer = std::io::BufWriter::new(file);
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let partition_clone = partition.to_string();
         let app_clone = app.clone();
@@ -171,7 +171,7 @@ impl DeviceManager {
         };
 
         device.read_partition(partition, &mut writer, &mut progress)
-            .map_err(|e| AppError::Device(format!("Read failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Read failed: {}", e)))?;
 
         Ok(())
     }
@@ -180,7 +180,7 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let partition_clone = partition.to_string();
         let app_clone = app.clone();
@@ -189,7 +189,7 @@ impl DeviceManager {
         };
 
         device.erase_partition(partition, &mut progress)
-            .map_err(|e| AppError::Device(format!("Erase failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Erase failed: {}", e)))?;
 
         Ok(())
     }
@@ -208,14 +208,14 @@ impl DeviceManager {
             "homescreen" => penumbra::BootMode::HomeScreen,
             "meta" => penumbra::BootMode::Meta,
             "test" => penumbra::BootMode::Test,
-            _ => return Err(AppError::Device(format!("Invalid mode: {}", mode)).into()),
+            _ => return Err(AppError::device(format!("Invalid mode: {}", mode)).into()),
         };
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         device.reboot(boot_mode)
-            .map_err(|e| AppError::Device(format!("Reboot failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Reboot failed: {}", e)))?;
 
         Ok(())
     }
@@ -224,10 +224,10 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         device.shutdown()
-            .map_err(|e| AppError::Device(format!("Shutdown failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Shutdown failed: {}", e)))?;
 
         Ok(())
     }
@@ -267,10 +267,10 @@ impl DeviceManager {
         };
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         device.flash_scatter(&scatter_content, reader_source, writer_sink, &mut progress)
-            .map_err(|e| AppError::Device(format!("Scatter flash failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Scatter flash failed: {}", e)))?;
 
         Ok(())
     }
@@ -303,14 +303,14 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::open(input_path)
             .context(format!("Failed to open input file: {}", input_path))?;
         let mut reader = BufReader::new(file);
 
         let user_section = device.get_storage()
-            .ok_or_else(|| AppError::Device("Failed to get storage".to_string()))?
+            .ok_or_else(|| AppError::device("Failed to get storage".to_string()))?
             .get_user_part();
 
         let mut progress = |written: usize, total: usize| {
@@ -318,7 +318,7 @@ impl DeviceManager {
         };
 
         device.write_offset(address, length, user_section, &mut reader, &mut progress)
-            .map_err(|e| AppError::Device(format!("Write offset failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Write offset failed: {}", e)))?;
 
         Ok(())
     }
@@ -327,13 +327,13 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::create(output_path)?;
         let mut writer = BufWriter::new(file);
 
         let user_section = device.get_storage()
-            .ok_or_else(|| AppError::Device("Failed to get storage".to_string()))?
+            .ok_or_else(|| AppError::device("Failed to get storage".to_string()))?
             .get_user_part();
 
         let mut progress = |read: usize, total: usize| {
@@ -341,7 +341,7 @@ impl DeviceManager {
         };
 
         device.read_offset(address, length, user_section, &mut writer, &mut progress)
-            .map_err(|e| AppError::Device(format!("Read offset failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Read offset failed: {}", e)))?;
 
         writer.flush()?;
         Ok(())
@@ -352,7 +352,7 @@ impl DeviceManager {
 
         let dir_path = std::path::Path::new(input_dir);
         if !dir_path.exists() {
-            return Err(AppError::Device("Directory does not exist".to_string()).into());
+            return Err(AppError::device("Directory does not exist".to_string()).into());
         }
 
         let entries: Vec<_> = std::fs::read_dir(dir_path)?
@@ -363,11 +363,11 @@ impl DeviceManager {
             .collect();
 
         if entries.is_empty() {
-            return Err(AppError::Device("Directory is empty".to_string()).into());
+            return Err(AppError::device("Directory is empty".to_string()).into());
         }
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         for entry in &entries {
             let path = entry.path();
@@ -389,7 +389,7 @@ impl DeviceManager {
                 Some(p) => p,
                 None => {
                     if !ignore_missing {
-                        return Err(AppError::Device(
+                        return Err(AppError::device(
                             format!("Partition '{}' not found on device. Use ignore_missing to skip.", part_name)
                         ).into());
                     }
@@ -399,7 +399,7 @@ impl DeviceManager {
             };
 
             if file_size > part.size as u64 {
-                return Err(AppError::Device(
+                return Err(AppError::device(
                     format!("File size ({}) exceeds partition size ({}) for '{}'", file_size, part.size, part_name)
                 ).into());
             }
@@ -409,7 +409,7 @@ impl DeviceManager {
             };
 
             device.write_partition(&part.name, file_size as usize, &mut reader, &mut progress)
-                .map_err(|e| AppError::Device(format!("Failed to write '{}': {}", part_name, e)))?;
+                .map_err(|e| AppError::device(format!("Failed to write '{}': {}", part_name, e)))?;
 
             log::info!("Written partition '{}'", part_name);
         }
@@ -424,11 +424,11 @@ impl DeviceManager {
         std::fs::create_dir_all(dir_path)?;
 
         if std::fs::read_dir(dir_path)?.next().is_some() {
-            return Err(AppError::Device("Output directory is not empty".to_string()).into());
+            return Err(AppError::device("Output directory is not empty".to_string()).into());
         }
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         for p in device.partitions() {
             if skip.contains(&p.name) {
@@ -458,7 +458,7 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let partitions: Vec<PartitionDetail> = device.partitions()
             .iter()
@@ -478,10 +478,10 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let storage = device.get_storage()
-            .ok_or_else(|| AppError::Device("Cannot retrieve storage information".to_string()))?;
+            .ok_or_else(|| AppError::device("Cannot retrieve storage information".to_string()))?;
 
         let total_size = storage.total_size();
         let block_size = storage.block_size();
@@ -514,12 +514,12 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         use penumbra::da::extensions::{KeyDeriveId, KeySize};
 
         let chip = device.devinfo().chip()
-            .ok_or_else(|| AppError::Device("Cannot determine chip".to_string()))?;
+            .ok_or_else(|| AppError::device("Cannot determine chip".to_string()))?;
 
         let efuse = chip.efuse();
         let sec_fuse_addr = efuse as u64 + 0x60;
@@ -531,21 +531,21 @@ impl DeviceManager {
         let mut pubk = [0u8; 0x20];
         let mut hrid = [0u8; 0x10];
         device.peek(pubk_addr, pubk.len(), &mut pubk[..], progress)
-            .map_err(|e| AppError::Device(format!("Failed to read public key: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to read public key: {}", e)))?;
         device.peek(hrid_addr, hrid.len(), &mut hrid[..], progress)
-            .map_err(|e| AppError::Device(format!("Failed to read HRID: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to read HRID: {}", e)))?;
 
         let sec_fuse_val = device.read_register(sec_fuse_addr)
-            .map_err(|e| AppError::Device(format!("Failed to read SEC fuse: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to read SEC fuse: {}", e)))?;
 
         let rpmb_key = device.derive_key_by_id(KeyDeriveId::Rpmb, KeySize::Key256)
-            .map_err(|e| AppError::Device(format!("Failed to derive RPMB key: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to derive RPMB key: {}", e)))?;
         let fde_key = device.derive_key_by_id(KeyDeriveId::Fde, KeySize::Key128)
-            .map_err(|e| AppError::Device(format!("Failed to derive FDE key: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to derive FDE key: {}", e)))?;
         let tee_key = device.derive_key_by_id(KeyDeriveId::Tee, KeySize::Key256)
-            .map_err(|e| AppError::Device(format!("Failed to derive TEE key: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to derive TEE key: {}", e)))?;
         let rot_key = device.derive_key_by_id(KeyDeriveId::Rot, KeySize::Key256)
-            .map_err(|e| AppError::Device(format!("Failed to derive ROT key: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to derive ROT key: {}", e)))?;
 
         Ok(KeysInfo {
             sec_fuse: format!("0x{:X}", sec_fuse_val),
@@ -562,10 +562,10 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let bootctrl = device.get_bootctrl()
-            .map_err(|e| AppError::Device(format!("Failed to get boot control: {}. Device may not support A/B slots.", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to get boot control: {}. Device may not support A/B slots.", e)))?;
 
         Ok(format!("{:?}", bootctrl.get_active_slot()))
     }
@@ -574,18 +574,18 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         use penumbra::hacc::{BootControl, BootPartition, OFFSET_SLOT_SUFFIX, TryWrite};
 
         let new_slot = match slot.to_uppercase().as_str() {
             "A" => BootPartition::A,
             "B" => BootPartition::B,
-            _ => return Err(AppError::Device(format!("Invalid slot: {}. Must be 'A' or 'B'.", slot)).into()),
+            _ => return Err(AppError::device(format!("Invalid slot: {}. Must be 'A' or 'B'.", slot)).into()),
         };
 
         let mut bootctrl = device.get_bootctrl()
-            .map_err(|e| AppError::Device(format!("Failed to get boot control: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to get boot control: {}", e)))?;
 
         let current_slot = bootctrl.get_active_slot();
         if current_slot == new_slot {
@@ -598,7 +598,7 @@ impl DeviceManager {
         bootctrl.try_write(&mut new_data[OFFSET_SLOT_SUFFIX..])?;
 
         device.write_partition("misc", new_data.len(), &new_data[..], |_, _| {})
-            .map_err(|e| AppError::Device(format!("Failed to write boot control: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to write boot control: {}", e)))?;
 
         Ok(())
     }
@@ -607,7 +607,7 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::create(output_path)?;
         let mut writer = BufWriter::new(file);
@@ -617,7 +617,7 @@ impl DeviceManager {
         };
 
         device.peek(address, length, &mut writer, &mut progress)
-            .map_err(|e| AppError::Device(format!("Peek failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Peek failed: {}", e)))?;
 
         writer.flush()?;
         Ok(())
@@ -627,7 +627,7 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::open(input_path)
             .context(format!("Failed to open input file: {}", input_path))?;
@@ -636,7 +636,7 @@ impl DeviceManager {
 
         let length = metadata.len() as usize;
         if length == 0 {
-            return Err(AppError::Device("Input file is empty".to_string()).into());
+            return Err(AppError::device("Input file is empty".to_string()).into());
         }
 
         let mut progress = |written: usize, total: usize| {
@@ -644,7 +644,7 @@ impl DeviceManager {
         };
 
         device.poke(address, length, &mut reader, &mut progress)
-            .map_err(|e| AppError::Device(format!("Poke failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Poke failed: {}", e)))?;
 
         Ok(())
     }
@@ -653,10 +653,10 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let value = device.read_register(address)
-            .map_err(|e| AppError::Device(format!("Register read failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Register read failed: {}", e)))?;
 
         Ok(value)
     }
@@ -665,10 +665,10 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         device.write_register(address, value)
-            .map_err(|e| AppError::Device(format!("Register write failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Register write failed: {}", e)))?;
 
         Ok(())
     }
@@ -677,22 +677,22 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         use penumbra::RpmbRegion;
         let rpmb_region = RpmbRegion::try_from(region).unwrap_or(RpmbRegion::R0);
 
         let storage = device.get_storage()
-            .ok_or_else(|| AppError::Device("Failed to get storage".to_string()))?;
+            .ok_or_else(|| AppError::device("Failed to get storage".to_string()))?;
         let rpmb_size = storage.get_rpmb_size();
         if rpmb_size == 0 {
-            return Err(AppError::Device("RPMB not supported on this device".to_string()).into());
+            return Err(AppError::device("RPMB not supported on this device".to_string()).into());
         }
         let max_sectors = (rpmb_size / 256) as u32;
         let num = num_sectors.unwrap_or_else(|| max_sectors.saturating_sub(start_sector));
 
         if start_sector.saturating_add(num) > max_sectors {
-            return Err(AppError::Device(format!("Out of bounds. Max sectors: {}", max_sectors)).into());
+            return Err(AppError::device(format!("Out of bounds. Max sectors: {}", max_sectors)).into());
         }
 
         let file = std::fs::File::create(output_path)?;
@@ -703,7 +703,7 @@ impl DeviceManager {
         };
 
         device.read_rpmb(rpmb_region, start_sector, num, &mut writer, &mut progress)
-            .map_err(|e| AppError::Device(format!("RPMB read failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("RPMB read failed: {}", e)))?;
 
         writer.flush()?;
         Ok(())
@@ -713,22 +713,22 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         use penumbra::RpmbRegion;
         let rpmb_region = RpmbRegion::try_from(region).unwrap_or(RpmbRegion::R0);
 
         let storage = device.get_storage()
-            .ok_or_else(|| AppError::Device("Failed to get storage".to_string()))?;
+            .ok_or_else(|| AppError::device("Failed to get storage".to_string()))?;
         let rpmb_size = storage.get_rpmb_size();
         if rpmb_size == 0 {
-            return Err(AppError::Device("RPMB not supported on this device".to_string()).into());
+            return Err(AppError::device("RPMB not supported on this device".to_string()).into());
         }
         let max_sectors = (rpmb_size / 256) as u32;
         let num = num_sectors.unwrap_or_else(|| max_sectors.saturating_sub(start_sector));
 
         if start_sector.saturating_add(num) > max_sectors {
-            return Err(AppError::Device(format!("Out of bounds. Max sectors: {}", max_sectors)).into());
+            return Err(AppError::device(format!("Out of bounds. Max sectors: {}", max_sectors)).into());
         }
 
         let file = std::fs::File::open(input_path)?;
@@ -739,7 +739,7 @@ impl DeviceManager {
         };
 
         device.write_rpmb(rpmb_region, start_sector, num, &mut reader, &mut progress)
-            .map_err(|e| AppError::Device(format!("RPMB write failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("RPMB write failed: {}", e)))?;
 
         Ok(())
     }
@@ -748,22 +748,22 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         use penumbra::RpmbRegion;
         let rpmb_region = RpmbRegion::try_from(region).unwrap_or(RpmbRegion::R0);
 
         let storage = device.get_storage()
-            .ok_or_else(|| AppError::Device("Failed to get storage".to_string()))?;
+            .ok_or_else(|| AppError::device("Failed to get storage".to_string()))?;
         let rpmb_size = storage.get_rpmb_size();
         if rpmb_size == 0 {
-            return Err(AppError::Device("RPMB not supported on this device".to_string()).into());
+            return Err(AppError::device("RPMB not supported on this device".to_string()).into());
         }
         let max_sectors = (rpmb_size / 256) as u32;
         let num = num_sectors.unwrap_or_else(|| max_sectors.saturating_sub(start_sector));
 
         if start_sector.saturating_add(num) > max_sectors {
-            return Err(AppError::Device(format!("Out of bounds. Max sectors: {}", max_sectors)).into());
+            return Err(AppError::device(format!("Out of bounds. Max sectors: {}", max_sectors)).into());
         }
 
         let mut progress = |erased: usize, total: usize| {
@@ -771,7 +771,7 @@ impl DeviceManager {
         };
 
         device.erase_rpmb(rpmb_region, start_sector, num, &mut progress)
-            .map_err(|e| AppError::Device(format!("RPMB erase failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("RPMB erase failed: {}", e)))?;
 
         Ok(())
     }
@@ -780,16 +780,16 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         use penumbra::RpmbRegion;
         let rpmb_region = RpmbRegion::try_from(region).unwrap_or(RpmbRegion::R0);
 
         let key = hex::decode(key_hex)
-            .map_err(|e| AppError::Device(format!("Invalid hex key: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Invalid hex key: {}", e)))?;
 
         device.auth_rpmb(rpmb_region, &key)
-            .map_err(|e| AppError::Device(format!("RPMB auth failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("RPMB auth failed: {}", e)))?;
 
         Ok(())
     }
@@ -798,13 +798,13 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         use penumbra::hacc::LockState;
 
         let state = if lock { LockState::Lock } else { LockState::Unlock };
         device.set_seccfg_lock_state(state)
-            .map_err(|e| AppError::Device(format!("Seccfg operation failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Seccfg operation failed: {}", e)))?;
 
         Ok(())
     }
@@ -813,13 +813,13 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::create(output_path)?;
         let writer = BufWriter::new(file);
 
         device.read_efuses(writer)
-            .map_err(|e| AppError::Device(format!("eFuse read failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("eFuse read failed: {}", e)))?;
 
         Ok(())
     }
@@ -828,7 +828,7 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::open(input_path)
             .context(format!("Failed to open eFuse file: {}", input_path))?;
@@ -836,7 +836,7 @@ impl DeviceManager {
         let reader = BufReader::new(file);
 
         device.write_efuses(reader, size)
-            .map_err(|e| AppError::Device(format!("eFuse write failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("eFuse write failed: {}", e)))?;
 
         Ok(())
     }
@@ -853,14 +853,14 @@ impl DeviceManager {
         let mut pl = PlProtocol::new(port);
 
         pl.send_da(&dummy_data, data_len, 0, data_len)
-            .map_err(|e| AppError::Device(format!("Crash send_da failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Crash send_da failed: {}", e)))?;
 
         port.reenumerate(0x0E8D, 0x0003)
-            .map_err(|e| AppError::Device(format!("Device re-enumeration failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Device re-enumeration failed: {}", e)))?;
 
         let mut pl = PlProtocol::new(port);
         pl.handshake()
-            .map_err(|e| AppError::Device(format!("Handshake failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Handshake failed: {}", e)))?;
 
         Ok(())
     }
@@ -873,18 +873,18 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         if device.get_connection_type() != ConnectionType::Brom {
-            return Err(AppError::Device("Must be in BootROM mode".to_string()).into());
+            return Err(AppError::device("Must be in BootROM mode".to_string()).into());
         }
 
         let data = std::fs::read(file_path)
             .context(format!("Failed to read preloader: {}", file_path))?;
 
         let (data_slice, jump_addr) = if raw {
-            let addr = address.ok_or_else(|| AppError::Device("--address required with --raw".to_string()))?;
+            let addr = address.ok_or_else(|| AppError::device("--address required with --raw".to_string()))?;
             (data.as_slice(), addr)
         } else {
             let preloader = Preloader::try_read(&data)
-                .map_err(|e| AppError::Device(format!("Failed to parse preloader: {}", e)))?;
+                .map_err(|e| AppError::device(format!("Failed to parse preloader: {}", e)))?;
             let gfh_file_info = preloader.gfh().file_info();
             let pl_jump_addr = gfh_file_info.load_addr() + gfh_file_info.jump_offset();
             let addr = address.unwrap_or(pl_jump_addr);
@@ -894,13 +894,13 @@ impl DeviceManager {
         let mut pl = PlProtocol::new(device.port_mut());
 
         pl.exploit()
-            .map_err(|e| AppError::Device(format!("Exploit failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Exploit failed: {}", e)))?;
 
         pl.send_da(data_slice, data_slice.len() as u32, jump_addr, 0)
-            .map_err(|e| AppError::Device(format!("send_da failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("send_da failed: {}", e)))?;
 
         pl.jump_da(jump_addr)
-            .map_err(|e| AppError::Device(format!("jump_da failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("jump_da failed: {}", e)))?;
 
         Ok(())
     }
@@ -909,7 +909,7 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         device.ensure_da_mode()
-            .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
+            .map_err(|e| AppError::device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::open(file_path)
             .context(format!("Failed to open file: {}", file_path))?;
@@ -917,10 +917,10 @@ impl DeviceManager {
         let file_size = std::fs::metadata(file_path)?.len();
 
         let part = device.get_partition_active(partition)
-            .ok_or_else(|| AppError::Device(format!("Partition '{}' not found", partition)))?;
+            .ok_or_else(|| AppError::device(format!("Partition '{}' not found", partition)))?;
 
         if file_size > part.size as u64 {
-            return Err(AppError::Device(format!(
+            return Err(AppError::device(format!(
                 "File size ({}) exceeds partition size ({})", file_size, part.size
             )).into());
         }
@@ -937,7 +937,7 @@ impl DeviceManager {
 
             set_rsc_info(xflash, port, &part_name, file_size as usize, &mut reader, &mut progress)
         })
-        .map_err(|e| AppError::Device(format!("RSC flash failed: {}", e)))?;
+        .map_err(|e| AppError::device(format!("RSC flash failed: {}", e)))?;
 
         Ok(())
     }
@@ -951,7 +951,7 @@ impl DeviceManager {
         let mut new_data = buffer.clone();
 
         let mut da = Da::try_read(&buffer)
-            .map_err(|e| AppError::Device(format!("Failed to parse DA file: {}", e)))?;
+            .map_err(|e| AppError::device(format!("Failed to parse DA file: {}", e)))?;
 
         log::info!("DA count: {:?}", da.header().da_count());
 

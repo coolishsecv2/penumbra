@@ -22,10 +22,7 @@ pub async fn connect_device(
 
     let mut manager = DEVICE_MANAGER.lock().map_err(|e| AppError::device(e.to_string()))?;
     manager.connect(&da_path, preloader_path.as_deref())
-        .map_err(|e| match e {
-            AppError::Cancelled => AppError::Cancelled,
-            other => other,
-        })
+        .map_err(AppError::from)
 }
 
 #[tauri::command]

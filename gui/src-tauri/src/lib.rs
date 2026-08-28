@@ -6,4 +6,7 @@
 pub mod commands;
 pub mod config;
 pub mod device;
+pub mod device_discovery;
 pub mod error;
+pub mod events;
+pub mod scatter;
