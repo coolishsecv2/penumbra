@@ -453,7 +453,7 @@ impl DeviceManager {
             rpmb_size,
             partition_count,
             total_size_human: format_size(total_size),
-            block_size_human: format_size(block_size),
+            block_size_human: format_size(block_size as u64),
             boot1_size_human: format_size(boot1_size),
             boot2_size_human: format_size(boot2_size),
             user_size_human: format_size(user_size),
@@ -767,7 +767,7 @@ impl DeviceManager {
             .map_err(|e| AppError::Device(format!("DA mode failed: {}", e)))?;
 
         let file = std::fs::File::create(output_path)?;
-        let mut writer = BufWriter::new(file);
+        let writer = BufWriter::new(file);
 
         device.read_efuses(writer)
             .map_err(|e| AppError::Device(format!("eFuse read failed: {}", e)))?;
