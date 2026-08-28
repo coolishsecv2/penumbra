@@ -8,13 +8,18 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useDeviceStore } from "../services/store";
+import { useOperationStore } from "../services/operationStore";
+import { useOperationStream } from "../hooks/useOperationStream";
 import { PartitionTable } from "../components/PartitionTable";
 import { OperationModal } from "../components/OperationModal";
+import { ProgressWidget } from "../components/ProgressWidget";
 import * as api from "../services/api";
 import type { Partition } from "../types";
 
 export function Tools() {
   const { connected, partitions } = useDeviceStore();
+  const { isRunning, startOperation, completeOperation } = useOperationStore();
+  useOperationStream();
   const [selectedPartitions, setSelectedPartitions] = useState<Set<string>>(
     new Set()
   );
@@ -57,11 +62,13 @@ export function Tools() {
     )
       return;
     setOperation("formatting");
+    startOperation("erase", partition.name);
     try {
       await api.formatPartition(partition.name);
     } catch (e) {
       console.error(`Format failed: ${e}`);
     } finally {
+      completeOperation();
       setOperation(null);
     }
   };
@@ -74,11 +81,13 @@ export function Tools() {
     )
       return;
     setOperation("erasing");
+    startOperation("erase", partition.name);
     try {
       await api.erasePartition(partition.name);
     } catch (e) {
       console.error(`Erase failed: ${e}`);
     } finally {
+      completeOperation();
       setOperation(null);
     }
   };
@@ -134,6 +143,9 @@ export function Tools() {
                 onErase={handleErase}
               />
             </div>
+
+            {/* Progress Widget */}
+            <ProgressWidget />
 
             {/* Device Controls */}
             <div className="flex-shrink-0 rounded-lg border border-border bg-card p-4">
