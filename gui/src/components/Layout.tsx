@@ -5,12 +5,18 @@ import {
   Wrench,
   Settings,
   Zap,
+  HardDrive,
+  Shield,
+  Cpu,
 } from "lucide-react";
 
 const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/flasher", icon: Zap, label: "Flasher" },
   { to: "/tools", icon: Wrench, label: "Tools" },
+  { to: "/device-info", icon: HardDrive, label: "Device Info" },
+  { to: "/advanced", icon: Cpu, label: "Advanced" },
+  { to: "/security", icon: Shield, label: "Security" },
   { to: "/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -25,7 +31,7 @@ export function Layout() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-foreground">Penumbra</h1>
-            <p className="text-[10px] text-muted">v1.1.0</p>
+            <p className="text-[10px] text-muted">v1.2.0</p>
           </div>
         </div>
         <nav className="p-2">
