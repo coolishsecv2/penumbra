@@ -98,17 +98,21 @@ jobs:
           else
             echo "tag=nightly" >> $GITHUB_OUTPUT
           fi
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          cp antumbra-windows/antumbra-x86_64-windows.exe release/ 2>/dev/null || true
+          cp antumbra-linux/antumbra-x86_64-linux release/ 2>/dev/null || true
+          find penumbra-gui-windows -type f \( -name '*.msi' -o -name '*.exe' -o -name '*.zip' -o -name '*.nsis*' \) -exec cp {} release/ \; 2>/dev/null || true
+          find penumbra-gui-linux -type f \( -name '*.deb' -o -name '*.AppImage' -o -name '*.tar.gz' -o -name '*.zip' \) -exec cp {} release/ \; 2>/dev/null || true
+          ls -la release/
       - name: Upload to release
         uses: ncipollo/release-action@v1
         with:
           name: ${{ steps.tag.outputs.tag == 'nightly' && 'Nightly Build' || steps.tag.outputs.tag }}
           tag: ${{ steps.tag.outputs.tag }}
           commit: ${{ github.sha }}
-          artifacts: >-
-            antumbra-windows/antumbra-x86_64-windows.exe,
-            antumbra-linux/antumbra-x86_64-linux,
-            penumbra-gui-windows/**/*,
-            penumbra-gui-linux/**/*
+          artifacts: "release/*"
           allowUpdates: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
