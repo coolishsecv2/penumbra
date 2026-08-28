@@ -15,7 +15,7 @@ interface OperationState {
   reset: () => void;
 }
 
-export const useOperationStore = create<OperationState>((set, get) => ({
+export const useOperationStore = create<OperationState>((set) => ({
   isRunning: false,
   operation: "",
   partition: "",

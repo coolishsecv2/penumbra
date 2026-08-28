@@ -6,7 +6,7 @@ import {
   Trash2,
   FileDown,
 } from "lucide-react";
-import type { Partition } from "../../types";
+import type { Partition } from "../types";
 
 interface PartitionTableProps {
   partitions: Partition[];

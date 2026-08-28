@@ -1,4 +1,4 @@
-import type { AppError, SerializedError, ErrorCategory } from "../types";
+import type { AppError, SerializedError, ErrorCategory } from "../../types";
 
 /**
  * Parse errors from Tauri invoke calls into structured AppError format.

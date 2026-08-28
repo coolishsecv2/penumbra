@@ -4,8 +4,6 @@ import {
   RotateCcw,
   Power,
   Zap,
-  RefreshCw,
-  AlertTriangle,
 } from "lucide-react";
 import { useDeviceStore } from "../services/store";
 import { useOperationStore } from "../services/operationStore";
@@ -18,7 +16,7 @@ import type { Partition } from "../types";
 
 export function Tools() {
   const { connected, partitions } = useDeviceStore();
-  const { isRunning, startOperation, completeOperation } = useOperationStore();
+  const { startOperation, completeOperation } = useOperationStore();
   useOperationStream();
   const [selectedPartitions, setSelectedPartitions] = useState<Set<string>>(
     new Set()
@@ -28,7 +26,6 @@ export function Tools() {
     partition: Partition | null;
     operation: "read" | "write";
   }>({ isOpen: false, partition: null, operation: "read" });
-  const [operation, setOperation] = useState<string | null>(null);
 
   const handleToggleSelected = (name: string) => {
     const next = new Set(selectedPartitions);
@@ -61,7 +58,6 @@ export function Tools() {
       !confirm(`Format partition "${partition.name}"? This is equivalent to erase.`)
     )
       return;
-    setOperation("formatting");
     startOperation("erase", partition.name);
     try {
       await api.formatPartition(partition.name);
@@ -69,7 +65,6 @@ export function Tools() {
       console.error(`Format failed: ${e}`);
     } finally {
       completeOperation();
-      setOperation(null);
     }
   };
 
@@ -80,7 +75,6 @@ export function Tools() {
       )
     )
       return;
-    setOperation("erasing");
     startOperation("erase", partition.name);
     try {
       await api.erasePartition(partition.name);
@@ -88,7 +82,6 @@ export function Tools() {
       console.error(`Erase failed: ${e}`);
     } finally {
       completeOperation();
-      setOperation(null);
     }
   };
 

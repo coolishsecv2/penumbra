@@ -1,5 +1,5 @@
 import { parseTauriError, getErrorSuggestion } from "./errorParser";
-import type { AppError } from "../types";
+import type { AppError } from "../../types";
 
 /**
  * Options for error handling behavior.
