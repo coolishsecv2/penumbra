@@ -92,3 +92,26 @@ export interface DeviceState {
   setDeviceInfo: (info: DeviceInfo | null) => void;
   disconnect: () => void;
 }
+
+// Scatter file types
+export interface ScatterPartition {
+  index: string;
+  partition_name: string;
+  file_name: string | null;
+  is_download: boolean;
+  partition_type: string;
+  linear_start_addr: string;
+  physical_start_addr: string;
+  partition_size: string;
+  region: string;
+  storage: string;
+  operation_type: string;
+}
+
+export interface ScatterFile {
+  platform: string;
+  project: string;
+  storage_type: string;
+  partitions: ScatterPartition[];
+  file_path: string;
+}
