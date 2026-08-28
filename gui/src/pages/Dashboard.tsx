@@ -7,53 +7,29 @@ import {
   ArrowRight,
   Usb,
   RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
+import { useDeviceConnection } from "../hooks/useDeviceConnection";
 import { useDeviceStore } from "../services/store";
 import * as api from "../services/api";
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { connected, daPath, preloaderPath, partitions, deviceInfo, setConnected, setPartitions, setDeviceInfo } =
-    useDeviceStore();
-  const [connecting, setConnecting] = useState(false);
+  const { connect, disconnect, isConnected, isConnecting, error } =
+    useDeviceConnection();
+  const { daPath, partitions, deviceInfo } = useDeviceStore();
   const [logo, setLogo] = useState("");
 
   useEffect(() => {
     api.getLogoAscii().then(setLogo).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (connected && daPath) {
-      loadDeviceInfo();
-    }
-  }, [connected, daPath]);
-
-  async function loadDeviceInfo() {
-    try {
-      const info = await api.getDeviceInfo();
-      setDeviceInfo(info);
-      const parts = await api.listPartitions();
-      setPartitions(parts);
-    } catch (e) {
-      console.error("Failed to load device info:", e);
-    }
-  }
-
   async function handleConnect() {
     if (!daPath) {
       navigate("/settings");
       return;
     }
-    setConnecting(true);
-    try {
-      await api.connectDevice(daPath, preloaderPath || undefined);
-      setConnected(true);
-    } catch (e) {
-      console.error("Connection failed:", e);
-      alert(`Connection failed: ${e}`);
-    } finally {
-      setConnecting(false);
-    }
+    await connect();
   }
 
   return (
@@ -66,11 +42,24 @@ export function Dashboard() {
           </pre>
         )}
         <p className="text-sm text-muted mt-1">
-          {connected
-            ? `Device connected — ${partitions.length} partitions detected`
-            : "Connect a device to get started"}
+          {isConnecting
+            ? "Connecting to device..."
+            : isConnected
+              ? `Device connected — ${partitions.length} partitions detected`
+              : "Connect a device to get started"}
         </p>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-start gap-3 rounded-lg border border-danger bg-danger/10 p-4">
+          <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-danger" />
+          <div>
+            <h3 className="font-semibold text-danger">Connection Error</h3>
+            <p className="text-sm text-muted mt-1">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* Status Cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -83,7 +72,7 @@ export function Dashboard() {
         <StatusCard
           icon={<HardDrive className="h-4 w-4 text-success" />}
           label="Partitions"
-          value={connected ? `${partitions.length} detected` : "No device"}
+          value={isConnected ? `${partitions.length} detected` : "No device"}
           bg="bg-success/10"
         />
         <StatusCard
@@ -97,19 +86,33 @@ export function Dashboard() {
       {/* Connect Button */}
       <button
         onClick={handleConnect}
-        disabled={connecting}
+        disabled={isConnecting}
         className="w-full flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
       >
-        {connecting ? (
+        {isConnecting ? (
           <RefreshCw className="h-4 w-4 animate-spin" />
         ) : (
           <Usb className="h-4 w-4" />
         )}
-        {connecting ? "Connecting..." : connected ? "Reconnect" : "Connect Device"}
+        {isConnecting
+          ? "Connecting..."
+          : isConnected
+            ? "Reconnect"
+            : "Connect Device"}
       </button>
 
+      {/* Disconnect Button */}
+      {isConnected && (
+        <button
+          onClick={disconnect}
+          className="w-full flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted hover:text-foreground hover:border-accent transition-colors"
+        >
+          Disconnect
+        </button>
+      )}
+
       {/* Quick Actions */}
-      {connected && (
+      {isConnected && (
         <div className="space-y-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted">
             Quick Actions
@@ -122,9 +125,9 @@ export function Dashboard() {
               onClick={async () => {
                 try {
                   await api.forceFastboot();
-                  alert("Device rebooting to fastboot");
+                  disconnect();
                 } catch (e) {
-                  alert(`Error: ${e}`);
+                  console.error("Fastboot error:", e);
                 }
               }}
             />
@@ -147,9 +150,9 @@ export function Dashboard() {
               onClick={async () => {
                 try {
                   await api.shutdownDevice();
-                  setConnected(false);
+                  disconnect();
                 } catch (e) {
-                  alert(`Error: ${e}`);
+                  console.error("Shutdown error:", e);
                 }
               }}
             />
