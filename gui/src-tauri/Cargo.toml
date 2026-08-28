@@ -1,12 +1,10 @@
-{
-  "name": "penumbra-gui",
-  "version": "1.1.0",
-  "description": "A modern GUI for Penumbra - MediaTek device tool",
-  "authors": ["coolishsec0175"],
-  "license": "AGPL-3.0-or-later",
-  "edition": "2021"
-
-}
+[package]
+name = "penumbra-gui"
+version = "1.2.0"
+description = "A modern GUI for Penumbra - MediaTek device tool"
+authors = ["coolishsec0175"]
+license = "AGPL-3.0-or-later"
+edition = "2021"
 
 [lib]
 name = "penumbra_gui_lib"
