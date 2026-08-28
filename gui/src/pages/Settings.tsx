@@ -13,8 +13,6 @@ export function Settings() {
   }, []);
 
   function handleSave() {
-    localStorage.setItem("penumbra:daPath", daPath || "");
-    localStorage.setItem("penumbra:preloaderPath", preloaderPath || "");
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
