@@ -3,13 +3,13 @@
     SPDX-FileCopyrightText: 2026 coolishsec0175
 */
 
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::io::{BufReader, BufWriter, Write};
 
 use anyhow::{Context, Result};
 use penumbra::da::DaProtocol;
 use penumbra::da::xflash::set_rsc_info;
 use penumbra::port::{PortBackend, PortType};
-use penumbra::{Device, DeviceBuilder, Partition};
+use penumbra::{Device, DeviceBuilder, MMIO, MtkPort, Storage};
 use std::sync::{Arc, Mutex};
 
 use crate::error::AppError;
@@ -24,10 +24,12 @@ impl DeviceManager {
     }
 
     pub fn connect(&mut self, da_path: &str, preloader_path: Option<&str>) -> Result<()> {
-        let da_data = std::fs::read(da_path)
+        let da_bytes = std::fs::read(da_path)
             .context(format!("Failed to read DA file: {}", da_path))?;
+        let da_data: &'static [u8] = Box::leak(da_bytes.into_boxed_slice());
 
-        let pl_data = preloader_path.map(|p| std::fs::read(p)).transpose()?;
+        let pl_bytes = preloader_path.map(|p| std::fs::read(p)).transpose()?;
+        let pl_data: Option<&'static [u8]> = pl_bytes.map(|b| Box::leak(b.into_boxed_slice()));
 
         let vid = Some(0x0E8D);
         let pid = Some(0x2000);
@@ -36,9 +38,9 @@ impl DeviceManager {
             .map_err(|e| AppError::Connection(format!("Failed to find device: {}", e)))?
             .ok_or_else(|| AppError::Connection("No MTK device found".to_string()))?;
 
-        let mut builder = DeviceBuilder::new(mtk_port).with_da_data(&da_data);
+        let mut builder = DeviceBuilder::new(mtk_port).with_da_data(da_data);
 
-        if let Some(ref pl) = pl_data {
+        if let Some(pl) = pl_data {
             builder = builder.with_preloader(pl);
         }
 
@@ -152,12 +154,12 @@ impl DeviceManager {
         let device = self.device.as_mut().ok_or(AppError::NotConnected)?;
 
         let boot_mode = match mode {
-            "normal" => penumbra::da::protocol::BootMode::Normal,
-            "fastboot" => penumbra::da::protocol::BootMode::Fastboot,
-            "recovery" => penumbra::da::protocol::BootMode::Meta,
-            "homescreen" => penumbra::da::protocol::BootMode::HomeScreen,
-            "meta" => penumbra::da::protocol::BootMode::Meta,
-            "test" => penumbra::da::protocol::BootMode::Test,
+            "normal" => penumbra::BootMode::Normal,
+            "fastboot" => penumbra::BootMode::Fastboot,
+            "recovery" => penumbra::BootMode::Meta,
+            "homescreen" => penumbra::BootMode::HomeScreen,
+            "meta" => penumbra::BootMode::Meta,
+            "test" => penumbra::BootMode::Test,
             _ => return Err(AppError::Device(format!("Invalid mode: {}", mode)).into()),
         };
 
@@ -196,18 +198,17 @@ impl DeviceManager {
             .parent()
             .map(|p| p.to_path_buf());
 
-        let reader_source = |path: &str| -> Result<(std::io::BufReader<std::fs::File>, usize)> {
+        let reader_source = move |path: &str| -> penumbra::Result<(std::io::BufReader<std::fs::File>, usize)> {
             let file_path = firmware_dir.as_ref()
                 .map(|d| d.join(path))
                 .unwrap_or_else(|| std::path::PathBuf::from(path));
 
-            let file = std::fs::File::open(&file_path)
-                .context(format!("Failed to open: {}", file_path.display()))?;
+            let file = std::fs::File::open(&file_path)?;
             let size = file.metadata()?.len() as usize;
             Ok((std::io::BufReader::new(file), size))
         };
 
-        let writer_sink = |path: &str| -> Result<std::io::BufWriter<std::fs::File>> {
+        let writer_sink = |path: &str| -> penumbra::Result<std::io::BufWriter<std::fs::File>> {
             let file = std::fs::File::create(path)?;
             Ok(std::io::BufWriter::new(file))
         };
