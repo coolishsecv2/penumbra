@@ -2,13 +2,12 @@
 resolver = "3"
 members = [
     "core",
-    "tui",
     "gui/src-tauri",
 ]
 exclude = [
     "gui/node_modules",
 ]
-default-members = ["tui"]
+default-members = ["gui/src-tauri"]
 
 [workspace.package]
 edition = "2024"
