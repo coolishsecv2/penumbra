@@ -9,6 +9,10 @@ import type {
 
 // === Connection ===
 
+export async function cancelOperation(): Promise<void> {
+  await invoke("cancel_operation");
+}
+
 export async function connectDevice(
   daPath: string,
   preloaderPath?: string
