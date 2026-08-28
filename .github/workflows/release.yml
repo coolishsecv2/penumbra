@@ -121,7 +121,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
-        path: artifacts
+        with:
+          path: artifacts
       - name: Determine tag
         id: tag
         run: |
@@ -132,13 +133,18 @@ jobs:
           fi
       - name: List downloaded artifacts
         run: find artifacts -type f
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.zip" -o -name "*.tar.gz" \) -exec cp {} release/ \;
+          ls -la release/
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           name: ${{ steps.tag.outputs.tag == 'nightly' && 'Nightly Build' || steps.tag.outputs.tag }}
           tag: ${{ steps.tag.outputs.tag }}
           commit: ${{ github.sha }}
-          artifacts: "artifacts/**/*.zip,artifacts/**/*.tar.gz"
+          artifacts: "release/*"
           allowUpdates: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
