@@ -29,7 +29,7 @@ impl DeviceManager {
         let da_data: &'static [u8] = Box::leak(da_bytes.into_boxed_slice());
 
         let pl_bytes = preloader_path.map(|p| std::fs::read(p)).transpose()?;
-        let pl_data: Option<&'static [u8]> = pl_bytes.map(|b| Box::leak(b.into_boxed_slice()));
+        let pl_data: Option<&'static [u8]> = pl_bytes.map(|b| &*Box::leak(b.into_boxed_slice()));
 
         let vid = Some(0x0E8D);
         let pid = Some(0x2000);
@@ -82,7 +82,7 @@ impl DeviceManager {
                 name: p.name.clone(),
                 address: format!("0x{:016X}", p.address),
                 size: p.size,
-                size_human: format_size(p.size),
+                size_human: format_size(p.size as u64),
                 section: format!("{:?}", p.kind),
             })
             .collect();
@@ -417,7 +417,7 @@ impl DeviceManager {
                 name: p.name.clone(),
                 address: format!("0x{:016X}", p.address),
                 size: p.size,
-                size_human: format_size(p.size),
+                size_human: format_size(p.size as u64),
                 section: format!("{:?}", p.kind),
             })
             .collect();
@@ -949,10 +949,10 @@ impl DeviceManager {
     }
 }
 
-fn format_size(bytes: usize) -> String {
-    const KB: usize = 1024;
-    const MB: usize = 1024 * KB;
-    const GB: usize = 1024 * MB;
+fn format_size(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = 1024 * KB;
+    const GB: u64 = 1024 * MB;
 
     if bytes >= GB {
         format!("{:.1} GiB", bytes as f64 / GB as f64)
@@ -995,12 +995,12 @@ pub struct DeviceInfo {
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct StorageInfoResult {
     pub storage_type: String,
-    pub total_size: usize,
-    pub block_size: usize,
-    pub boot1_size: usize,
-    pub boot2_size: usize,
-    pub user_size: usize,
-    pub rpmb_size: usize,
+    pub total_size: u64,
+    pub block_size: u32,
+    pub boot1_size: u64,
+    pub boot2_size: u64,
+    pub user_size: u64,
+    pub rpmb_size: u64,
     pub partition_count: usize,
     pub total_size_human: String,
     pub block_size_human: String,
