@@ -37,7 +37,6 @@ jobs:
               '',
               '- Windows: `.exe` and `.msi`',
               '- Linux: `.deb` and `.AppImage`',
-              '- CLI: `antumbra` binary',
             ].join('\n');
 
             let release;
@@ -146,38 +145,3 @@ jobs:
           projectPath: gui
           tauriScript: npx tauri
           args: --bundles deb,appimage
-
-  build-cli-windows:
-    needs: create-release
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
-      - name: Build CLI
-        run: cargo build --release -p antumbra --features penumbra/serial
-      - name: Package
-        shell: bash
-        run: 7z a antumbra-windows-x86_64.exe.zip target/release/antumbra.exe
-      - name: Upload to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload nightly antumbra-windows-x86_64.exe.zip --clobber
-
-  build-cli-linux:
-    needs: create-release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: Swatinem/rust-cache@v2
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev
-      - name: Build CLI
-        run: cargo build --release -p antumbra --features penumbra/serial
-      - name: Package
-        run: tar -czvf antumbra-linux-x86_64.tar.gz -C target/release antumbra
-      - name: Upload to release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload nightly antumbra-linux-x86_64.tar.gz --clobber
