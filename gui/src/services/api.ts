@@ -5,6 +5,8 @@ import type {
   DeviceInfo,
   StorageInfo,
   KeysInfo,
+  ScatterFile,
+  ScatterPartition,
 } from "../types";
 
 // === Connection ===
@@ -256,4 +258,17 @@ export async function getLogo(): Promise<string> {
 
 export async function getLogoAscii(): Promise<string> {
   return await invoke("get_logo_ascii");
+}
+
+// === Scatter ===
+
+export async function parseScatterFile(filePath: string): Promise<ScatterFile> {
+  return await invoke("parse_scatter_file", { filePath });
+}
+
+export async function detectImageFiles(
+  scatterPath: string,
+  partitions: ScatterPartition[]
+): Promise<Record<string, string>> {
+  return await invoke("detect_image_files", { scatterPath, partitions });
 }
