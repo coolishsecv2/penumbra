@@ -2,15 +2,20 @@ import { useMemo, useRef, useState } from "react";
 import { Zap, Upload, FolderOpen, RefreshCw, FileText } from "lucide-react";
 import { useDeviceStore } from "../services/store";
 import { useFlasherStore } from "../services/flasherStore";
+import { useOperationStore } from "../services/operationStore";
+import { useOperationStream } from "../hooks/useOperationStream";
 import * as api from "../services/api";
 import { ScatterDropzone } from "../components/flasher/ScatterDropzone";
 import { ScatterInfoBar } from "../components/flasher/ScatterInfoBar";
 import { FlashPartitionTable } from "../components/flasher/FlashPartitionTable";
 import { FlashActionBar } from "../components/flasher/FlashActionBar";
 import { FlashProgressModal } from "../components/flasher/FlashProgressModal";
+import { ProgressWidget } from "../components/ProgressWidget";
 
 export function Flasher() {
   const { connected, daPath } = useDeviceStore();
+  const { startOperation, completeOperation } = useOperationStore();
+  useOperationStream();
   const [mode, setMode] = useState<"partition" | "scatter">("partition");
   const [selectedPartition, setSelectedPartition] = useState("");
   const [imagePath, setImagePath] = useState("");
@@ -196,6 +201,7 @@ export function Flasher() {
       if (!imgPath) continue;
 
       updateFlashProgress(i + 1);
+      startOperation("flash", partitionName);
 
       try {
         await api.flashPartition(partitionName, imgPath);
@@ -208,6 +214,7 @@ export function Flasher() {
       }
     }
 
+    completeOperation();
     setFlashing(false);
     setFlashModalOpen(false);
 
@@ -223,6 +230,7 @@ export function Flasher() {
   const handleFlashPartition = async () => {
     if (!selectedPartition || !imagePath) return;
     setFlashOperation("flashing");
+    startOperation("flash", selectedPartition);
     try {
       await api.flashPartition(selectedPartition, imagePath);
       setFlashOperation("done");
@@ -230,6 +238,8 @@ export function Flasher() {
     } catch (e) {
       console.error(`Flash failed: ${e}`);
       setFlashOperation("idle");
+    } finally {
+      completeOperation();
     }
   };
 
@@ -440,6 +450,9 @@ export function Flasher() {
                     </p>
                   </div>
                 )}
+
+                {/* Progress Widget */}
+                <ProgressWidget />
               </div>
             )}
           </div>
