@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import { X, FolderOpen, AlertTriangle } from "lucide-react";
 import type { Partition } from "../types";
+import { useOperationStore } from "../services/operationStore";
 import * as api from "../services/api";
 
 interface OperationModalProps {
@@ -58,9 +59,12 @@ export const OperationModal = memo<OperationModalProps>(
       }
     }, [operation, partition]);
 
+    const { startOperation, completeOperation } = useOperationStore();
+
     const handleStart = useCallback(async () => {
       if (!partition || !filePath) return;
       setIsExecuting(true);
+      startOperation(operation === "write" ? "flash" : "read", partition.name);
 
       try {
         if (operation === "write") {
@@ -72,9 +76,10 @@ export const OperationModal = memo<OperationModalProps>(
       } catch (e) {
         console.error(`Operation failed: ${e}`);
       } finally {
+        completeOperation();
         setIsExecuting(false);
       }
-    }, [partition, filePath, operation, onClose]);
+    }, [partition, filePath, operation, onClose, startOperation, completeOperation]);
 
     if (!isOpen || !partition) return null;
 
