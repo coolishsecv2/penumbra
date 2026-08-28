@@ -68,21 +68,6 @@ export function DeviceInfoPage() {
     setTimeout(() => setCopied(null), 1500);
   }
 
-  function CopyButton({ text, id }: { text: string; id: string }) {
-    return (
-      <button
-        onClick={() => copyToClipboard(text, id)}
-        className="ml-2 text-muted hover:text-foreground"
-      >
-        {copied === id ? (
-          <Check className="h-3 w-3 text-success" />
-        ) : (
-          <Copy className="h-3 w-3" />
-        )}
-      </button>
-    );
-  }
-
   async function handleSetSlot(slot: string) {
     if (!confirm(`Set active boot slot to ${slot}?`)) return;
     try {

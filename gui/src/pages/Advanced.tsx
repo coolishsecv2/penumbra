@@ -3,7 +3,6 @@ import {
   Cpu,
   MemoryStick,
   Database,
-  HardDrive,
   Zap,
   Upload,
   FolderOpen,
@@ -14,7 +13,7 @@ import { useDeviceStore } from "../services/store";
 import * as api from "../services/api";
 
 export function Advanced() {
-  const { connected, partitions } = useDeviceStore();
+  const { connected } = useDeviceStore();
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-4">
